@@ -1,47 +1,80 @@
 import { useState } from "react";
 
-export default function InventoryForm({ onAnalyze }) {
-  const [currentStock, setCurrentStock] = useState("");
-  const [sales, setSales] = useState("");
+export default function InventoryForm({
+  onAnalyze,
+}) {
+  const [inventoryFile, setInventoryFile] =
+    useState(null);
+
+  const [salesFile, setSalesFile] =
+    useState(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    onAnalyze({
-      current_stock: Number(currentStock),
-      total_sales_last_30_days: Number(sales),
-    });
+    if (
+      !inventoryFile ||
+      !salesFile
+    ) {
+      alert(
+        "Please upload both files."
+      );
+      return;
+    }
+
+    onAnalyze(
+      inventoryFile,
+      salesFile
+    );
   };
 
   return (
     <form onSubmit={handleSubmit}>
+
       <div>
-        <label>Current Stock</label>
+        <label>
+          Inventory CSV
+        </label>
+
         <br />
+
         <input
-          type="number"
-          value={currentStock}
-          onChange={(e) => setCurrentStock(e.target.value)}
-          required
+          type="file"
+          accept=".csv"
+          onChange={(e) =>
+            setInventoryFile(
+              e.target.files[0]
+            )
+          }
         />
       </div>
 
       <br />
 
       <div>
-        <label>Total Sales Last 30 Days</label>
+        <label>
+          Sales CSV
+        </label>
+
         <br />
+
         <input
-          type="number"
-          value={sales}
-          onChange={(e) => setSales(e.target.value)}
-          required
+          type="file"
+          accept=".csv"
+          onChange={(e) =>
+            setSalesFile(
+              e.target.files[0]
+            )
+          }
         />
       </div>
 
       <br />
 
-      <button type="submit">Analyze</button>
+      <button type="submit">
+        Analyze Inventory
+      </button>
+
     </form>
   );
 }

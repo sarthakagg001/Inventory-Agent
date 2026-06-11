@@ -1,23 +1,57 @@
-export default function ResultCard({ result }) {
-  if (!result) return null;
+export default function ResultCard({
+  results,
+}) {
+
+  if (
+    !results ||
+    results.length === 0
+  ) {
+    return null;
+  }
 
   return (
-    <div>
-      <h2>Analysis Result</h2>
+    <table>
 
-      <p>
-        <strong>Status:</strong> {result.status}
-      </p>
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Status</th>
+          <th>Stock</th>
+          <th>Days</th>
+          <th>Recommendation</th>
+        </tr>
+      </thead>
 
-      <p>
-        <strong>Days of Inventory:</strong>{" "}
-        {result.days_of_inventory}
-      </p>
+      <tbody>
 
-      <p>
-        <strong>Recommendation:</strong>{" "}
-        {result.recommendation}
-      </p>
-    </div>
+        {results.map((row) => (
+
+          <tr key={row.sku}>
+
+            <td>{row.sku}</td>
+
+            <td>{row.status}</td>
+
+            <td>
+              {row.current_stock}
+            </td>
+
+            <td>
+              {row.days_of_inventory.toFixed(
+                1
+              )}
+            </td>
+
+            <td>
+              {row.recommendation}
+            </td>
+
+          </tr>
+
+        ))}
+
+      </tbody>
+
+    </table>
   );
 }

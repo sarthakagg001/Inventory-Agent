@@ -3,26 +3,75 @@ import { useState } from "react";
 import InventoryForm from "./components/InventoryForm";
 import ResultCard from "./components/ResultCard";
 
-import { analyzeInventory } from "./api";
+import { uploadFiles } from "./services/api";
 
 function App() {
-  const [result, setResult] = useState(null);
 
-  const handleAnalyze = async (data) => {
-    const response = await analyzeInventory(data);
+  const [results, setResults] =
+    useState([]);
 
-    setResult(response);
-  };
+  const [loading, setLoading] =
+    useState(false);
+
+  const handleAnalyze =
+    async (
+      inventoryFile,
+      salesFile
+    ) => {
+
+      try {
+
+        setLoading(true);
+
+        const response =
+          await uploadFiles(
+            inventoryFile,
+            salesFile
+          );
+
+        setResults(response);
+
+      } catch (error) {
+
+        console.error(error);
+
+        alert(
+          "Upload failed."
+        );
+
+      } finally {
+
+        setLoading(false);
+
+      }
+    };
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h1>Inventory Agent</h1>
+    <div
+      style={{
+        padding: "2rem",
+      }}
+    >
+      <h1>
+        Inventory Agent
+      </h1>
 
-      <InventoryForm onAnalyze={handleAnalyze} />
+      <InventoryForm
+        onAnalyze={
+          handleAnalyze
+        }
+      />
 
       <hr />
 
-      <ResultCard result={result} />
+      {loading && (
+        <p>Analyzing...</p>
+      )}
+
+      <ResultCard
+        results={results}
+      />
+
     </div>
   );
 }

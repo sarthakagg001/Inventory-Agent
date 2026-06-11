@@ -1,5 +1,8 @@
 from fastapi import FastAPI
-
+from fastapi import UploadFile
+from services.inventory_service import (
+    analyze_inventory_files
+)
 from models import InventoryRequest
 from graph import graph
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,3 +36,16 @@ def analyze(data: InventoryRequest):
     )
 
     return result
+    
+@app.post("/upload")
+def upload_files(
+    inventory_file: UploadFile,
+    sales_file: UploadFile
+):
+
+    results = analyze_inventory_files(
+        inventory_file,
+        sales_file
+    )
+
+    return results
