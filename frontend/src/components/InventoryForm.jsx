@@ -1,80 +1,186 @@
 import { useState } from "react";
 
-export default function InventoryForm({
-  onAnalyze,
-}) {
-  const [inventoryFile, setInventoryFile] =
-    useState(null);
+export default function InventoryForm({ onAnalyze }) {
+  const [inventoryFile, setInventoryFile] = useState(null);
+  const [salesFile, setSalesFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const [salesFile, setSalesFile] =
-    useState(null);
+  const validateFile = (file, fileType) => {
+    if (!file.name.endsWith(".csv")) {
+      setError(`${fileType} must be a CSV file`);
+      return false;
+    }
 
-  const handleSubmit = (e) => {
+    if (file.size > 10 * 1024 * 1024) {
+      setError(`${fileType} is too large (max 10MB)`);
+      return false;
+    }
+
+    setError("");
+    return true;
+  };
+
+  const handleFileInput = (e, fileType) => {
+    const file = e.target.files[0];
+
+    if (file && validateFile(file, fileType)) {
+      if (fileType === "Inventory") {
+        setInventoryFile(file);
+      } else {
+        setSalesFile(file);
+      }
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      !inventoryFile ||
-      !salesFile
-    ) {
-      alert(
-        "Please upload both files."
+    if (!inventoryFile || !salesFile) {
+      setError(
+        "Please upload both Inventory and Sales files"
       );
       return;
     }
 
-    onAnalyze(
-      inventoryFile,
-      salesFile
-    );
+    try {
+      setLoading(true);
+      setError("");
+
+      await onAnalyze(
+        inventoryFile,
+        salesFile
+      );
+    } catch (err) {
+      setError(
+        "Analysis failed. Please check your files and try again."
+      );
+
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearFiles = () => {
+    setInventoryFile(null);
+    setSalesFile(null);
+    setError("");
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <div className="form-container">
 
-      <div>
-        <label>
-          Inventory CSV
-        </label>
+      <form onSubmit={handleSubmit}>
 
-        <br />
+        {error && (
+          <div className="alert alert-error">
+            {error}
+          </div>
+        )}
 
-        <input
-          type="file"
-          accept=".csv"
-          onChange={(e) =>
-            setInventoryFile(
-              e.target.files[0]
-            )
-          }
-        />
-      </div>
+        <div className="upload-row">
 
-      <br />
+          <label
+            htmlFor="inventory-input"
+            className="upload-card"
+          >
+            <div className="upload-icon">
+              📦
+            </div>
 
-      <div>
-        <label>
-          Sales CSV
-        </label>
+            <div className="upload-text">
+              <strong>
+                Inventory CSV
+              </strong>
 
-        <br />
+              <span>
+                {inventoryFile
+                  ? inventoryFile.name
+                  : "Click to upload inventory file"}
+              </span>
+            </div>
 
-        <input
-          type="file"
-          accept=".csv"
-          onChange={(e) =>
-            setSalesFile(
-              e.target.files[0]
-            )
-          }
-        />
-      </div>
+            <input
+              id="inventory-input"
+              type="file"
+              accept=".csv"
+              onChange={(e) =>
+                handleFileInput(
+                  e,
+                  "Inventory"
+                )
+              }
+              className="hidden-input"
+            />
+          </label>
 
-      <br />
+          <label
+            htmlFor="sales-input"
+            className="upload-card"
+          >
+            <div className="upload-icon">
+              📈
+            </div>
 
-      <button type="submit">
-        Analyze Inventory
-      </button>
+            <div className="upload-text">
+              <strong>
+                Sales CSV
+              </strong>
 
-    </form>
+              <span>
+                {salesFile
+                  ? salesFile.name
+                  : "Click to upload sales file"}
+              </span>
+            </div>
+
+            <input
+              id="sales-input"
+              type="file"
+              accept=".csv"
+              onChange={(e) =>
+                handleFileInput(
+                  e,
+                  "Sales"
+                )
+              }
+              className="hidden-input"
+            />
+          </label>
+
+        </div>
+
+        <div className="form-actions">
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={
+              !inventoryFile ||
+              !salesFile ||
+              loading
+            }
+          >
+            {loading
+              ? "Analyzing..."
+              : "🚀 Analyze Inventory"}
+          </button>
+
+          {(inventoryFile || salesFile) && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={clearFiles}
+            >
+              Clear
+            </button>
+          )}
+
+        </div>
+
+      </form>
+
+    </div>
   );
 }

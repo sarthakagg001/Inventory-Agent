@@ -10,6 +10,7 @@ class InventoryState(TypedDict):
 
     avg_daily_sales: float
     days_of_inventory: float
+    stockout_risk: int
     status: str
     recommendation: str
 
@@ -20,29 +21,73 @@ def analyze_inventory(state: InventoryState):
         state["total_sales_last_30_days"] / 30
     )
 
-    days_of_inventory = (
-        state["current_stock"] / avg_daily_sales
-    )
+    if avg_daily_sales == 0:
 
-    if days_of_inventory < 15:
-        status = "REORDER"
+        days_of_inventory = 9999
+
     else:
+
+        days_of_inventory = (
+            state["current_stock"] / avg_daily_sales
+        )
+
+    if days_of_inventory < 1:
+
+        status = "CRITICAL"
+        stockout_risk = 95
+
+    elif days_of_inventory < 3:
+
+        status = "AT_RISK"
+        stockout_risk = 80
+
+    elif days_of_inventory < 7:
+
+        status = "AT_RISK"
+        stockout_risk = 60
+
+    elif days_of_inventory < 15:
+
+        status = "REORDER"
+        stockout_risk = 40
+
+    else:
+
         status = "HEALTHY"
+        stockout_risk = 10
 
     return {
         "avg_daily_sales": avg_daily_sales,
         "days_of_inventory": days_of_inventory,
+        "stockout_risk": stockout_risk,
         "status": status
     }
 
 
-def generate_recommendation(state: InventoryState):
+def generate_recommendation(
+    state: InventoryState
+):
 
-    if state["status"] == "REORDER":
+    if state["status"] == "CRITICAL":
+
+        recommendation = (
+            "Immediate replenishment required."
+        )
+
+    elif state["status"] == "AT_RISK":
+
+        recommendation = (
+            "Monitor closely and reorder soon."
+        )
+
+    elif state["status"] == "REORDER":
+
         recommendation = (
             "Inventory is low. Reorder stock soon."
         )
+
     else:
+
         recommendation = (
             "Inventory levels look healthy."
         )
@@ -52,7 +97,9 @@ def generate_recommendation(state: InventoryState):
     }
 
 
-builder = StateGraph(InventoryState)
+builder = StateGraph(
+    InventoryState
+)
 
 builder.add_node(
     "inventory_analysis",

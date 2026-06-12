@@ -1,0 +1,9 @@
+sku,medicine_name,current_stock
+MED001,Amoxicillin_500mg,8
+MED002,Ibuprofen_400mg,1200
+MED003,Metformin_1000mg,45
+MED004,Lisinopril_10mg,520
+MED005,Insulin_Vial_10ml,3
+MED006,Aspirin_100mg,850
+MED007,Omeprazole_20mg,15
+MED008,Atorvastatin_20mg,680
