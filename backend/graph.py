@@ -12,7 +12,6 @@ class InventoryState(TypedDict):
     days_of_inventory: float
     stockout_risk: int
     status: str
-    recommendation: str
 
 
 def analyze_inventory(state: InventoryState):
@@ -64,39 +63,6 @@ def analyze_inventory(state: InventoryState):
     }
 
 
-def generate_recommendation(
-    state: InventoryState
-):
-
-    if state["status"] == "CRITICAL":
-
-        recommendation = (
-            "Immediate replenishment required."
-        )
-
-    elif state["status"] == "AT_RISK":
-
-        recommendation = (
-            "Monitor closely and reorder soon."
-        )
-
-    elif state["status"] == "REORDER":
-
-        recommendation = (
-            "Inventory is low. Reorder stock soon."
-        )
-
-    else:
-
-        recommendation = (
-            "Inventory levels look healthy."
-        )
-
-    return {
-        "recommendation": recommendation
-    }
-
-
 builder = StateGraph(
     InventoryState
 )
@@ -106,22 +72,12 @@ builder.add_node(
     analyze_inventory
 )
 
-builder.add_node(
-    "recommendation",
-    generate_recommendation
-)
-
 builder.set_entry_point(
     "inventory_analysis"
 )
 
 builder.add_edge(
     "inventory_analysis",
-    "recommendation"
-)
-
-builder.add_edge(
-    "recommendation",
     END
 )
 

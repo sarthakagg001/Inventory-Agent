@@ -62,40 +62,33 @@ export const downloadCSV = (results) => {
   URL.revokeObjectURL(url);
 };
 
-export const downloadPDF = (results) => {
-  if (!results || results.length === 0) return;
+export const downloadPDF = async (results) => {
 
-  // dynamic import to keep bundle small when not used
-  // jsPDF and autotable are in dependencies
-  const { jsPDF } = require("jspdf");
-  const autoTable = require("jspdf-autotable");
+  const { jsPDF } = await import("jspdf");
 
-  const doc = new jsPDF({ unit: "pt", format: "letter" });
+  const autoTableModule =
+    await import("jspdf-autotable");
 
-  const columns = [
-    { header: "SKU", dataKey: "sku" },
-    { header: "Status", dataKey: "status" },
-    { header: "Stock", dataKey: "current_stock" },
-    { header: "Days", dataKey: "days_of_inventory" },
-    { header: "Recommendation", dataKey: "recommendation" },
-  ];
+  const autoTable =
+    autoTableModule.default;
 
-  const data = results.map((r) => ({
-    sku: r.sku,
-    status: r.status,
-    current_stock: r.current_stock,
-    days_of_inventory: Number(r.days_of_inventory).toFixed(1),
-    recommendation: r.recommendation,
-  }));
+  const doc = new jsPDF();
 
   autoTable(doc, {
-    head: [columns.map((c) => c.header)],
-    body: data.map((d) => columns.map((c) => d[c.dataKey])),
-    startY: 40,
-    styles: { fontSize: 10 },
-    headStyles: { fillColor: [37, 99, 235] },
+    head: [[
+      "SKU",
+      "Status",
+      "Risk %",
+      "Forecast"
+    ]],
+
+    body: results.map(item => [
+      item.sku,
+      item.inventory_status,
+      item.stockout_risk,
+      item.demand_forecast
+    ])
   });
 
-  doc.text("Inventory Analysis Results", 40, 24);
-  doc.save(`inventory-results-${Date.now()}.pdf`);
+  doc.save("inventory-report.pdf");
 };

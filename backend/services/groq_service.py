@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 client = Groq(
     api_key=os.getenv("GROQ_API_KEY")
 )
@@ -15,46 +14,80 @@ client = Groq(
 def analyze_inventory_with_ai(results):
 
     prompt = f"""
-You are an inventory analyst.
+You are an inventory optimization expert.
 
-Analyze each SKU and return ONLY valid JSON.
+Analyze each inventory item and return ONLY a valid JSON array.
 
 Input:
 {json.dumps(results)}
 
 For each item return:
 
-inventory_status:
+- sku
+- inventory_status
+- demand_forecast
+- recommended_action
+- reorder_quantity
+- explanation
+
+Rules:
+
+inventory_status must be:
 - Critical
 - At Risk
 - Healthy
 
-stockout_risk:
-0-100
-
 demand_forecast:
-forecast for next 30 days
+Expected demand for next 30 days.
+
+recommended_action:
+Specific business action.
+
+reorder_quantity:
+Suggested quantity to purchase.
 
 explanation:
-short business explanation
+2-3 sentence business explanation.
 
-Return ONLY JSON array.
+Use:
+- current_stock
+- total_sales_last_30_days
+- days_of_inventory
+- stockout_risk
+
+Return ONLY JSON.
 """
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        temperature=0.2,
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
-    )
-
-    content = response.choices[0].message.content
-
     try:
+
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            temperature=0.3,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+
+        content = (
+            response
+            .choices[0]
+            .message
+            .content
+            .strip()
+        )
+
+        # Groq sometimes wraps JSON in markdown
+        if content.startswith("```json"):
+            content = (
+                content
+                .replace("```json", "")
+                .replace("```", "")
+                .strip()
+            )
+
         ai_results = json.loads(content)
 
         ai_map = {
@@ -62,7 +95,7 @@ Return ONLY JSON array.
             for item in ai_results
         }
 
-        enhanced = []
+        enhanced_results = []
 
         for result in results:
 
@@ -74,16 +107,21 @@ Return ONLY JSON array.
 
                 result["inventory_status"] = ai.get(
                     "inventory_status",
-                    "Healthy"
-                )
-
-                result["stockout_risk"] = ai.get(
-                    "stockout_risk",
-                    0
+                    result.get("status")
                 )
 
                 result["demand_forecast"] = ai.get(
                     "demand_forecast",
+                    result["total_sales_last_30_days"]
+                )
+
+                result["recommended_action"] = ai.get(
+                    "recommended_action",
+                    "Monitor inventory."
+                )
+
+                result["reorder_quantity"] = ai.get(
+                    "reorder_quantity",
                     0
                 )
 
@@ -92,17 +130,54 @@ Return ONLY JSON array.
                     ""
                 )
 
-            enhanced.append(result)
+            else:
 
-        return enhanced
+                result["inventory_status"] = (
+                    result.get("status")
+                )
 
-    except Exception:
+                result["demand_forecast"] = (
+                    result["total_sales_last_30_days"]
+                )
+
+                result["recommended_action"] = (
+                    "Monitor inventory."
+                )
+
+                result["reorder_quantity"] = 0
+
+                result["explanation"] = (
+                    "No AI analysis available."
+                )
+
+            enhanced_results.append(result)
+
+        return enhanced_results
+
+    except Exception as e:
+
+        print(
+            f"Groq error: {e}"
+        )
 
         for result in results:
 
-            result["inventory_status"] = "Unknown"
-            result["stockout_risk"] = 0
-            result["demand_forecast"] = 0
-            result["explanation"] = "AI analysis unavailable"
+            result["inventory_status"] = (
+                result.get("status")
+            )
+
+            result["demand_forecast"] = (
+                result["total_sales_last_30_days"]
+            )
+
+            result["recommended_action"] = (
+                "Monitor inventory."
+            )
+
+            result["reorder_quantity"] = 0
+
+            result["explanation"] = (
+                "AI analysis unavailable."
+            )
 
         return results

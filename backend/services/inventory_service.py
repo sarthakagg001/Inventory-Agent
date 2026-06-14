@@ -44,6 +44,16 @@ def analyze_inventory_files(
 
             result["sku"] = row["sku"]
 
+            # Generic inventory name support
+            if "item_name" in row:
+                result["item_name"] = row["item_name"]
+
+            elif "medicine_name" in row:
+                result["item_name"] = row["medicine_name"]
+
+            else:
+                result["item_name"] = row["sku"]
+
             result["current_stock"] = int(
                 row["current_stock"]
             )
@@ -63,5 +73,9 @@ def analyze_inventory_files(
         return enhanced_results
 
     except Exception as e:
-        logger.error(str(e))
+
+        logger.error(
+            f"Inventory processing error: {e}"
+        )
+
         raise
